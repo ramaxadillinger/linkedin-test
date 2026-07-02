@@ -1,0 +1,32 @@
+From the top 6, 3 are worth a comment (see selection rule in module docstring).
+
+[1] Author: Marta D.
+    Profile: https://www.linkedin.com/in/[redacted]/
+    Headline: Talent Sourcer | IT Recruitment | Tech & Non-Tech Roles
+    Location: Lviv, Ukraine
+    Mutual:
+    Post: Hi everyone, I need your help, I'm still actively looking for a new job, and I would be very thankful if you take a minute to read this post, repost it, or recommend me to someone who is looking for a
+    Drafted comment: The combination of solid backend fundamentals with hands-on AI implementation experience is genuinely rare right now—most people either go deep on one or dabble in the other. Your point about learning velocity mattering more than any single tech stack resonates especially given how fast the AI landscape is moving.
+
+[2] Author: Daniel M.
+    Profile: https://www.linkedin.com/in/[redacted]/
+    Headline: Senior Test Engineer at WiFi Wizards Inc
+    Location: Stockton, California, United States
+    Mutual:
+    Post: 🚨 AI Testing Interview in 2026 be like...
+Follow Himanshu Agarwal
+Interviewer: Tell me about yourself.
+
+Candidate: 12 years in Automation Testing. Selenium, Playwright, API, CI/CD...
+
+Interviewer: Nic
+    Drafted comment: I'm genuinely curious how you'd approach testing something like hallucination detection in an LLM given your wireless systems background—feels like debugging model drift might have some parallel to tracking anomalies in network behavior, but I could be off base.
+
+[3] Author: Gleb R.
+    Profile: https://www.linkedin.com/in/[redacted]/
+    Headline: Staff Software Engineer | AI Agents, Voice Systems & Healthcare Automation | Full-Stack, Mobile & Cloud Infrastructure | Future CTO
+    Location: Tbilisi, Georgia
+    Mutual:
+    Post: A few weeks ago we spent several hours discussing what looked like a tiny issue in one of our AI voice agents. It wasn’t hallucinating, the latency was fine, conversations were coherent, but every now
+    Drafted comment: This is exactly why healthcare products fail even when the technology works—users need to feel like the system actually sees them, not just processes them. A pronoun error might seem trivial in a sprint planning meeting, but it's the moment a patient decides your AI isn't trustworthy enough to use again.
+

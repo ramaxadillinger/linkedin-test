@@ -1,0 +1,29 @@
+From the top 6, 3 are worth a comment (see selection rule in module docstring).
+
+[1] Author: Marta D.
+    Profile: https://www.linkedin.com/in/[redacted]/
+    Post: Hi everyone, I need your help, I'm still actively looking for a new job, and I would be very thankful if you take a minute to read this post, repost it, or recommend me to someone who is looking for a
+    Drafted comment: The combination of production infrastructure chops with hands-on AI implementation is pretty rare - most people either go deep on one or the other, so the fact that you've actually set up observability alongside building RAG pipelines makes you a much safer bet for teams trying to move fast with AI without burning down their systems. Hope you land something soon, the market's rough right now but that skill mix should eventually get the right attention.
+
+[2] Author: Solomiia H.
+    Profile: https://www.linkedin.com/in/[redacted]/
+    Post: Всі ми звикли хантити у LinkedIn. Але чи пробували ви шукати кандидатів у Threads? 🤔
+
+Зараз це один із найцікавіших майданчиків для рекрутингу, особливо якщо ви шукаєте креативників, маркетологів чи I
+    Drafted comment: I'd genuinely be curious to hear from anyone who's actually tried this – does Threads really convert for you, or does it feel more like you're just building audience there while the actual hires still come through LinkedIn? The "no Boolean search" thing seems like it could be a massive pain point if you're trying to filter at scale.
+
+[3] Author: Romans V.
+    Profile: https://www.linkedin.com/in/[redacted]/
+    Post: The most expensive bug I investigated...
+...wasn't in the code.
+
+Everyone was looking for a defect.
+
+QA couldn't reproduce it.
+
+Developers couldn't find it.
+
+The logs looked healthy.
+
+Metrics were sta
+    Drafted comment: I've been on both sides of this—once spent a day tracking down "inconsistent behavior" only to realize the product owner and dev team had completely different interpretations of what "sort by relevance" actually meant. Your point about validating assumptions before writing tests hits hard because that's where so much wasted effort actually lives.

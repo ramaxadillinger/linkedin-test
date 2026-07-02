@@ -1,0 +1,10 @@
+auth/
+__pycache__/
+*.pyc
+.venv/
+venv/
+feed_dump.html
+*_post.html
+.env
+.pytest_cache/
+.claude/
