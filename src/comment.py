@@ -24,6 +24,7 @@ Usage:
     python src/comment.py                    # draft comments for top posts, print only
     python src/comment.py --top 2            # narrow to 2 instead of 3
     python src/comment.py --profile-aware    # Level 3: visit author profiles first
+    python src/comment.py --mock             # fixture data, no browser/login needed
 """
 
 import argparse
@@ -37,7 +38,7 @@ from dotenv import load_dotenv
 from playwright.sync_api import Page, sync_playwright
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from engage import AUTH_STATE, FEED_URL, SELECTORS, TOP_N, collect_candidates
+from engage import AUTH_STATE, FEED_URL, SELECTORS, TOP_N, collect_candidates, load_mock_candidates
 from login import perform_login
 from retry import retry
 
@@ -125,6 +126,18 @@ def scrape_profile(page: Page, profile_url: str) -> dict:
     return profile
 
 
+def mock_profile(post: dict) -> dict:
+    """Fixture posts already carry headline/location/mutual (see
+    mock_feed.json) - reshape into the same dict scrape_profile() returns,
+    no live page to visit."""
+    return {
+        "headline": post.get("headline", ""),
+        "location": post.get("location", ""),
+        "mutual": post.get("mutual", ""),
+        "about": "",
+    }
+
+
 def draft_comment(client: Anthropic, post: dict, profile: dict | None = None) -> str:
     context = ""
     if profile:
@@ -158,19 +171,44 @@ Post:
     return response.content[0].text.strip()
 
 
+def print_comments(client: Anthropic, chosen: list[dict], get_profile) -> None:
+    for i, post in enumerate(chosen, start=1):
+        profile = get_profile(post)
+        comment = draft_comment(client, post, profile)
+
+        print(f"[{i}] Author: {post['author']}")
+        print(f"    Profile: {post['profile_url']}")
+        if profile:
+            print(f"    Headline: {profile['headline']}")
+            print(f"    Location: {profile['location']}")
+            print(f"    Mutual: {profile['mutual']}")
+        print(f"    Post: {post['text'][:200]}")
+        print(f"    Drafted comment: {comment}\n")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--top", type=int, default=3, help="How many posts to draft comments for (2-3)")
     parser.add_argument("--profile-aware", action="store_true", help="Level 3: visit each author's profile before drafting")
+    parser.add_argument("--mock", action="store_true", help="Use fixture data instead of a live account (offline, no login/browser needed)")
     args = parser.parse_args()
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
         sys.exit("ANTHROPIC_API_KEY not set. Put it in a .env file or export it.")
+
+    client = Anthropic()
+
+    if args.mock:
+        top_posts = sorted(load_mock_candidates(), key=lambda c: c["engagement"], reverse=True)[:TOP_N]
+        chosen = pick_worth_commenting(top_posts, args.top)
+        print(f"From the top {len(top_posts)}, {len(chosen)} are worth a comment (see selection rule in module docstring).\n")
+        get_profile = mock_profile if args.profile_aware else (lambda post: None)
+        print_comments(client, chosen, get_profile)
+        return
+
     if not AUTH_STATE.exists():
         print("No saved session found - opening a browser for a one-time manual login.")
         perform_login()
-
-    client = Anthropic()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
@@ -185,21 +223,10 @@ def main():
 
         top_posts = sorted(candidates, key=lambda c: c["engagement"], reverse=True)[:TOP_N]
         chosen = pick_worth_commenting(top_posts, args.top)
-
         print(f"From the top {len(top_posts)}, {len(chosen)} are worth a comment (see selection rule in module docstring).\n")
 
-        for i, post in enumerate(chosen, start=1):
-            profile = scrape_profile(page, post["profile_url"]) if args.profile_aware else None
-            comment = draft_comment(client, post, profile)
-
-            print(f"[{i}] Author: {post['author']}")
-            print(f"    Profile: {post['profile_url']}")
-            if profile:
-                print(f"    Headline: {profile['headline']}")
-                print(f"    Location: {profile['location']}")
-                print(f"    Mutual: {profile['mutual']}")
-            print(f"    Post: {post['text'][:200]}")
-            print(f"    Drafted comment: {comment}\n")
+        get_profile = (lambda post: scrape_profile(page, post["profile_url"])) if args.profile_aware else (lambda post: None)
+        print_comments(client, chosen, get_profile)
 
         browser.close()
 

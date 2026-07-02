@@ -6,9 +6,13 @@ and group posts, keeps the longest remaining text.
 Level 3: parse_topcard - locks in the two bugs the real profile scrape hit
 (name picked as location, then the connection-degree badge picked as
 location) so they can't silently come back.
+
+Plus one for the --mock --profile-aware path (bonus, not part of the
+graded levels): mock_profile must read the fixture's own headline/location/
+mutual fields rather than trying to scrape a live page.
 """
 
-from comment import parse_topcard, pick_worth_commenting
+from comment import mock_profile, parse_topcard, pick_worth_commenting
 
 
 def _post(text, profile_url="https://www.linkedin.com/in/someone/"):
@@ -44,3 +48,14 @@ def test_parse_topcard_skips_name_and_degree_badge():
 
     assert profile["headline"].startswith("QA & Support Engineer")
     assert profile["location"] == "Valencia y alrededores"
+
+
+def test_mock_profile_reshapes_fixture_fields():
+    post = {"headline": "GOAT | Personal Brand Architect", "location": "Al-Nassr, Saudi Arabia", "mutual": "3 mutual connections"}
+
+    profile = mock_profile(post)
+
+    assert profile["headline"] == post["headline"]
+    assert profile["location"] == post["location"]
+    assert profile["mutual"] == post["mutual"]
+    assert profile["about"] == ""  # fixture has no About section to fake

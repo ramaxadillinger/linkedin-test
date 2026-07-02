@@ -19,9 +19,11 @@ everything else (data-testid, role, href*="/in/") is locale-independent.
 Usage:
     python src/engage.py --dry-run   # collect + print, do not click Like
     python src/engage.py             # collect + actually like the top 10
+    python src/engage.py --mock      # run against fixture data, no browser/login needed
 """
 
 import argparse
+import json
 import random
 import re
 import sys
@@ -37,6 +39,7 @@ from retry import retry
 PROJECT_ROOT = Path(__file__).resolve().parent.parent  # src/ -> repo root
 AUTH_STATE = PROJECT_ROOT / "auth" / "state.json"
 FEED_URL = "https://www.linkedin.com/feed/"
+MOCK_FEED_PATH = Path(__file__).parent / "fixtures" / "mock_feed.json"
 
 CANDIDATE_POOL_SIZE = 30  # how many organic posts to scan before ranking
 TOP_N = 10                # how many posts to like
@@ -167,6 +170,19 @@ def collect_candidates(page: Page) -> list[dict]:
     return candidates
 
 
+def load_mock_candidates() -> list[dict]:
+    """Fixture posts (fictional celebrity LinkedIn-parody content, purely for
+    offline testing) in the same shape collect_candidates produces - minus
+    "locator", since there's no real DOM element to click. like_post treats
+    locator=None as a no-op "like" so the rest of the pipeline (ranking,
+    selection, drafting) runs unmodified against this data."""
+    posts = json.loads(MOCK_FEED_PATH.read_text())
+    return [
+        {**post, "key": post["author"], "locator": None, "engagement": post["reactions"] + post["comments"]}
+        for post in posts
+    ]
+
+
 def dismiss_reaction_popover(page: Page) -> None:
     """Hovering the like button opens a floating reaction-picker (love/celebrate/
     etc). It renders as a full-page overlay and, left open, blocks every click
@@ -186,7 +202,9 @@ def _click_like(like_button: Locator) -> None:
     like_button.click(timeout=10_000)
 
 
-def like_post(post_locator: Locator) -> str:
+def like_post(post_locator: Locator | None) -> str:
+    if post_locator is None:
+        return "LIKED (mock)"  # --mock candidates have no real DOM element to click
     page = post_locator.page
     # The action bar (like/comment/share) lazy-mounts only once a post is
     # actually scrolled near the viewport - posts collected earlier in the
@@ -210,10 +228,30 @@ def like_post(post_locator: Locator) -> str:
         time.sleep(random.uniform(1.5, 3.5))  # human-like pacing between actions
 
 
+def print_results(candidates: list[dict], dry_run: bool) -> None:
+    top_posts = sorted(candidates, key=lambda c: c["engagement"], reverse=True)[:TOP_N]
+    print(f"Collected {len(candidates)} organic candidates, engaging with top {len(top_posts)} by reactions+comments.\n")
+
+    for i, post in enumerate(top_posts, start=1):
+        snippet = post["text"][:200]
+        outcome = "DRY-RUN (not liked)" if dry_run else like_post(post["locator"])
+
+        print(f"[{i}] Author: {post['author']}")
+        print(f"    Profile: {post['profile_url']}")
+        print(f"    Engagement score: {post['engagement']} ({post['reactions']} reactions, {post['comments']} comments)")
+        print(f"    Text: {snippet}")
+        print(f"    Outcome: {outcome}\n")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="Collect and print candidates but do not click Like")
+    parser.add_argument("--mock", action="store_true", help="Use fixture data instead of a live account (offline, no login needed)")
     args = parser.parse_args()
+
+    if args.mock:
+        print_results(load_mock_candidates(), args.dry_run)
+        return
 
     if not AUTH_STATE.exists():
         print("No saved session found - opening a browser for a one-time manual login.")
@@ -230,20 +268,7 @@ def main():
         if not candidates:
             sys.exit("No organic posts found - selectors likely need updating (see module docstring).")
 
-        top_posts = sorted(candidates, key=lambda c: c["engagement"], reverse=True)[:TOP_N]
-
-        print(f"Collected {len(candidates)} organic candidates, engaging with top {len(top_posts)} by reactions+comments.\n")
-
-        for i, post in enumerate(top_posts, start=1):
-            snippet = post["text"][:200]
-            outcome = "DRY-RUN (not liked)" if args.dry_run else like_post(post["locator"])
-
-            print(f"[{i}] Author: {post['author']}")
-            print(f"    Profile: {post['profile_url']}")
-            print(f"    Engagement score: {post['engagement']} ({post['reactions']} reactions, {post['comments']} comments)")
-            print(f"    Text: {snippet}")
-            print(f"    Outcome: {outcome}\n")
-
+        print_results(candidates, args.dry_run)
         browser.close()
 
 
