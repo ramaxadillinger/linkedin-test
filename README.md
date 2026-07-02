@@ -89,7 +89,15 @@ python src/comment.py --top 2         # narrow to 2 instead of 3
 python src/comment.py --profile-aware # Level 3: also visits author profiles first
 
 python -m pytest                      # unit tests for the pure logic (no browser needed)
+
+python src/engage.py --mock                    # try it offline - no login, no browser
+python src/comment.py --mock --profile-aware    # same, for Level 2/3 (still calls the real Claude API)
 ```
+
+`--mock` runs the whole pipeline against `src/fixtures/mock_feed.json` (a handful
+of fictional, parody LinkedIn "thought leader" posts from public figures) instead
+of a live account - a safe way to see the ranking/selection/drafting logic work
+without touching LinkedIn at all.
 
 All commands run from the repo root - `src/` holds the code, but `auth/`
 (saved session) and `.env` (API key) are expected at the repo root, not
