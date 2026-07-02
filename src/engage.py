@@ -77,7 +77,7 @@ def parse_count(raw: str) -> int:
     if not match:
         return 0
 
-    digits, suffix = match.group(1), match.group(2)
+    digits, suffix = match.group(1), match.group(2)  # group(2) is None if the "(K|MIL)?" part didn't match
     if suffix:
         number = digits.replace(",", ".")  # "1,2" -> "1.2"
     else:
@@ -116,6 +116,9 @@ def extract_author(post: Locator) -> tuple[str, str]:
             url = link.get_attribute("href") or ""
             return name, url.split("?")[0]
 
+    # .count() first: .first alone wouldn't error on a missing element, but
+    # calling .get_attribute() on it next would hang/fail - always check
+    # count() before touching a locator that might not exist.
     fallback = post.locator('[aria-label*="perfil"]').first
     if fallback.count() > 0:
         label = fallback.get_attribute("aria-label") or ""
@@ -178,6 +181,8 @@ def load_mock_candidates() -> list[dict]:
     selection, drafting) runs unmodified against this data."""
     posts = json.loads(MOCK_FEED_PATH.read_text())
     return [
+        # {**post, ...} copies all of post's keys, then the keys listed after
+        # override/add to that copy - shorter than post.copy() + 3 assignments.
         {**post, "key": post["author"], "locator": None, "engagement": post["reactions"] + post["comments"]}
         for post in posts
     ]
@@ -203,6 +208,9 @@ def _click_like(like_button: Locator) -> None:
 
 
 def like_post(post_locator: Locator | None) -> str:
+    # "Locator | None" (Python 3.10+) means "a real Playwright element, or
+    # None" - None is what --mock candidates pass in, since there's nothing
+    # in a real page to click.
     if post_locator is None:
         return "LIKED (mock)"  # --mock candidates have no real DOM element to click
     page = post_locator.page
@@ -266,6 +274,8 @@ def main():
 
         candidates = collect_candidates(page)
         if not candidates:
+            # sys.exit(str) prints the string to stderr and exits with code 1 -
+            # shorter than print(..., file=sys.stderr) + exit(1).
             sys.exit("No organic posts found - selectors likely need updating (see module docstring).")
 
         print_results(candidates, args.dry_run)

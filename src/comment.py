@@ -43,6 +43,8 @@ from login import perform_login
 from retry import retry
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")  # .env lives at repo root, not src/
+# .resolve() makes the path absolute and follows symlinks; .parent.parent
+# goes up two levels: src/comment.py -> src/ -> repo root.
 
 MODEL = "claude-haiku-4-5-20251001"  # cheap model - drafting a 1-3 sentence comment doesn't need more
 LINK_MARKERS = ("http://", "https://", "lnkd.in")
@@ -87,6 +89,8 @@ def parse_topcard(lines: list[str]) -> dict:
 
     name = lines[0]
     rest = lines[1:]
+    # next(generator, default): returns the first line matching the
+    # condition, or "" if none match - avoids a manual for/break/flag loop.
     headline = next((l for l in rest[:5] if len(l) > 20), "")
     location = next(
         (l for l in rest if l not in (name, headline) and 3 < len(l) < 50 and not DEGREE_BADGE.search(l)),
@@ -172,6 +176,9 @@ Post:
 
 
 def print_comments(client: Anthropic, chosen: list[dict], get_profile) -> None:
+    # get_profile is a function passed in as a value (a closure, in main()
+    # below) - lets the caller decide once whether profile lookup means a
+    # live scrape, a mock lookup, or nothing, instead of branching here.
     for i, post in enumerate(chosen, start=1):
         profile = get_profile(post)
         comment = draft_comment(client, post, profile)
@@ -225,6 +232,9 @@ def main():
         chosen = pick_worth_commenting(top_posts, args.top)
         print(f"From the top {len(top_posts)}, {len(chosen)} are worth a comment (see selection rule in module docstring).\n")
 
+        # This lambda "remembers" `page` from this scope (a closure) - so
+        # get_profile(post) can be called later with just a post, no need to
+        # pass page around everywhere.
         get_profile = (lambda post: scrape_profile(page, post["profile_url"])) if args.profile_aware else (lambda post: None)
         print_comments(client, chosen, get_profile)
 
